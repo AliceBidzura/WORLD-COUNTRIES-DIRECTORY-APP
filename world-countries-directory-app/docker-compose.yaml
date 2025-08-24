@@ -1,0 +1,56 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    volumes:
+      - ./app:/var/www/app
+    working_dir: /var/www
+    environment:
+      APP_ENV: dev
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: world_db
+      DB_USER: world_user
+      DB_PASS: world_pass
+    depends_on:
+      - db
+    networks:
+      - backend
+
+  db:
+    container_name: db
+    image: mysql:latest
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: world_db
+      MYSQL_USER: world_user
+      MYSQL_PASSWORD: world_pass
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+      - ./app:/var/www/app
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+    networks:
+      - backend
+
+volumes:
+  dbdata:
+
+networks:
+  backend:
+    driver: bridge
